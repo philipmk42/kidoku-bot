@@ -1,0 +1,1 @@
+# Kidoku Bot source package

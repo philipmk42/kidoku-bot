@@ -1,0 +1,8 @@
+torch>=2.0.0
+numpy
+chess
+pygame
+streamlit
+streamlit-chessboard
+tqdm
+pyyaml

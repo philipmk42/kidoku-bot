@@ -1,0 +1,1 @@
+from .get_bot_move import KidokuBot
