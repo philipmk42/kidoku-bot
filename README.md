@@ -29,8 +29,6 @@ kidoku-bot/
 ├── models/                   # Saved model weights (.pth)
 ├── train.py                  # Main training entrypoint
 └── README.md
-text## How to Train
-
 pip install -r requirements.txt
 python train.py
 Training checkpoints are saved in the models/ folder after every epoch.
