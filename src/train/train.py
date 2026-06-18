@@ -42,7 +42,7 @@ class ChessDataset(Dataset):
 def train(
     data_dir: str = "data/processed",
     batch_size: int = 128,
-    epochs: int = 10,
+    epochs: int = 32,
     lr: float = 1e-3,
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 ):
