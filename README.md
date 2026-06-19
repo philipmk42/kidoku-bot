@@ -1,92 +1,61 @@
 # Kidoku Bot
 
-A neural network chess bot trained to **play like "kidokuismyname"** (~500-600 ELO on Chess.com) using behavioral cloning on their real game history.
+A neural network that learns to play chess like **kidokuismyname** (~500-600 ELO) using behavioral cloning on real game data.
 
 ## Goal
 
-Create an AI that captures the playing style, mistakes, opening preferences, and personality of a specific low-rated human player — not to play strong chess, but to feel *human*.
-
-## Why this is interesting
-
-Most chess engines play perfectly or near-perfectly. This project goes the opposite direction: it tries to replicate the beautiful imperfection of human play at the ~600 ELO level.
+Build a bot that captures the playing style, opening preferences, and typical mistakes of a specific low-rated human player rather than playing optimally.
 
 ## Current Status
 
-🚧 **Early development** — Starting fresh with a clean, proper implementation.
+- Data processing pipeline (PGN → training tensors)
+- `KidokuPolicyNet` (ResNet-style policy network)
+- Training script with checkpointing
+- Inference engine with temperature sampling
+- Model trained for 32 epochs on ~50 games
 
-### Key improvements over previous attempts:
-- Fixed large policy head (can suggest *any* legal move, not limited to 492 seen moves)
-- Proper data pipeline
-- Modern but lightweight ResNet-style architecture
-- Temperature-controlled sampling for human-like variability
-- Clean, maintainable codebase
+**Note:** The current model was trained on a relatively small dataset (50 games). It shows high training accuracy but may be overfitting. More games will be added in future training runs.
 
 ## Project Structure
-
-```
 kidoku-bot/
 ├── data/
-│   ├── raw/              # Original PGN files from Chess.com
-│   └── processed/        # Tokenized boards + move targets
+│   ├── raw/                  # Original PGN files
+│   └── processed/            # Training tensors (.pt files)
 ├── src/
-│   ├── data/             # Data loading & preprocessing
-│   ├── model/            # Neural network architectures
-│   ├── train/            # Training loops, loss, logging
-│   ├── inference/        # get_bot_move() with temperature, mate detection, etc.
-│   └── ui/               # Pygame interface + future Streamlit
-├── models/               # Saved weights (.pth)
-├── notebooks/            # Exploration & analysis
-├── train.py              # Main training entrypoint
-├── play.py               # Play against the bot (Pygame)
-├── requirements.txt
+│   ├── data/                 # PGN processing
+│   ├── model/                # KidokuPolicyNet
+│   ├── train/                # Training loop
+│   └── inference/            # KidokuBot inference class
+├── models/                   # Saved model weights (.pth)
+├── train.py                  # Main training entrypoint
 └── README.md
-```
-
-## Roadmap
-
-- [ ] Clean data pipeline (PGN → training examples)
-- [ ] Fixed policy head architecture (from-to + promotion)
-- [ ] Training script with proper logging & checkpoints
-- [ ] Strong inference engine (temperature, mate-in-1, legal move masking)
-- [ ] Nice Pygame UI (drag & drop, move history, evaluation feel)
-- [ ] Evaluation: How well does it imitate Kidoku? (move prediction accuracy + human Turing test)
-- [ ] Optional: Opening book + simple search (if we want to tune strength later)
-
-## Installation
-
-```bash
-git clone https://github.com/yourname/kidoku-bot.git
-cd kidoku-bot
 pip install -r requirements.txt
-```
+python train.py
+Training checkpoints are saved in the models/ folder after every epoch.
+How to Use the Bot (Inference)
+Pythonfrom src.inference import KidokuBot
+import chess
 
-## Quick Start (once trained)
+bot = KidokuBot(model_path="models/kidoku_policy_final.pth", temperature=1.6)
 
-```bash
-python play.py
-```
+board = chess.Board()
+move = bot.get_move(board)
+print(move)   # Returns UCI move (e.g. "e2e4")
+Higher temperature = more random/human-like moves.
+Lower temperature = more deterministic.
+Limitations (Current)
 
-## Data
+Trained on limited data (~50 games)
+High training accuracy likely due to overfitting
+No search / value head (pure policy model)
+Best used as a style imitation experiment rather than a strong player
 
-The model is trained on real games played by **kidokuismyname** on Chess.com (rapid 10+0).
+Future Plans
 
-If you want to train your own "clone" of a different player, just replace the PGN file in `data/raw/`.
+Train on significantly more games
+Add validation split to monitor overfitting
+Build playable Pygame interface
+Experiment with temperature tuning and move selection
 
-## Philosophy
-
-> "The goal is not to beat the player. The goal is to *become* the player."
-
-This project prioritizes **style and personality** over Elo rating.
-
-## License
-
-MIT
-
-## Acknowledgments
-
-- Built with `python-chess`, PyTorch, and love for imperfect human chess.
-- Inspired by projects like Maia Chess, but focused on much lower-rated play.
-
----
-
-**Want to follow the development?** Star the repo and watch the commits. We'll build this properly, one clean step at a time.
+Acknowledgments
+Built using python-chess and PyTorch.
