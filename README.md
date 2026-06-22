@@ -21,22 +21,7 @@ Create a bot that captures the playing **style**, opening preferences, and typic
 
 **Note**: The model was trained on a relatively small dataset (\~50 games). It currently shows signs of overfitting. We plan to improve it by training on significantly more games.
 
-## Project Structure
-kidoku-bot/
-├── assets/
-│   └── pieces/           # Chess piece images (PNG)
-├── data/
-│   ├── raw/              # Original PGN files
-│   └── processed/        # Training data (.pt files)
-├── models/               # Saved model weights (.pth)
-├── src/
-│   ├── data/             # PGN processing
-│   ├── model/            # KidokuPolicyNet
-│   ├── train/            # Training loop
-│   ├── inference/        # KidokuBot inference
-│   └── ui/               # Pygame interface
-├── train.py
-└── README.md
+
 ## How to Run
 
 ### 1. Play Against the Bot (Recommended)
