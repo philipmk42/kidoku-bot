@@ -1,61 +1,89 @@
 # Kidoku Bot
 
-A neural network that learns to play chess like **kidokuismyname** (~500-600 ELO) using behavioral cloning on real game data.
+A neural chess bot that learns to **play like a specific human** rather than to play well.
+It clones the move choices of `kidokuismyname`, a roughly 530-rated Chess.com player,
+using behavioral cloning on about 1,100 of their games.
 
-## Goal
+The goal is not strength. It is faithfulness: given a position, the bot tries to play the
+move *that player* would actually play, habits and mistakes included.
 
-Build a bot that captures the playing style, opening preferences, and typical mistakes of a specific low-rated human player rather than playing optimally.
+## Results
 
-## Current Status
+Measured on held-out games (see "How it is evaluated" below):
 
-- Data processing pipeline (PGN → training tensors)
-- `KidokuPolicyNet` (ResNet-style policy network)
-- Training script with checkpointing
-- Inference engine with temperature sampling
-- Model trained for 32 epochs on ~50 games
+| Metric | Score |
+| --- | --- |
+| Top-1 move-match | **52.6%** |
+| Top-3 move-match | **63.1%** |
 
-**Note:** The current model was trained on a relatively small dataset (50 games). It shows high training accuracy but may be overfitting. More games will be added in future training runs.
+On positions from games it has never seen, the model picks kidoku's exact move about 53% of
+the time, and kidoku's move is among its top 3 about 63% of the time. Trained on ~1,100
+games (Black only), ~30k training positions, ResNet-style policy network.
 
-## Project Structure
-kidoku-bot/
-├── data/
-│   ├── raw/                  # Original PGN files
-│   └── processed/            # Training tensors (.pt files)
-├── src/
-│   ├── data/                 # PGN processing
-│   ├── model/                # KidokuPolicyNet
-│   ├── train/                # Training loop
-│   └── inference/            # KidokuBot inference class
-├── models/                   # Saved model weights (.pth)
-├── train.py                  # Main training entrypoint
-└── README.md
-pip install -r requirements.txt
+## How it is evaluated (and why the number is honest)
+
+Move-match is measured with a **by-game** train/validation split: 15% of whole games are
+held out, so no position from a validation game ever appears in training.
+
+This matters. A single chess game contains ~30 to 40 highly correlated positions. Splitting
+*individual positions* into train and validation leaks near-duplicate positions across the
+two sets and inflates the score. Splitting by *game* is what makes 53% a real generalization
+number instead of memorization. The split is seeded, so the result is reproducible.
+
+## Honest limitations
+
+- **Black only.** The bot is trained on kidoku's games as Black, so it plays Black. The UI
+  assigns the human player White.
+- **Residual overfitting.** Train accuracy reaches ~80% while validation plateaus near 53%,
+  so a train/val gap remains. Validation flattens with more epochs, which suggests the model
+  is near the ceiling for this amount of data; more games is the most likely way to push it
+  further.
+- **Imitation ceiling.** A ~530-rated player is inconsistent and will play different moves in
+  similar positions, so exact top-1 match has a natural ceiling well below 100%. Top-3 is
+  arguably the fairer measure of how well the style is captured.
+- This is not a strong engine. By design it reproduces the target player's mistakes.
+
+## Architecture
+
+- **Input:** 14 x 8 x 8 board tensor (piece planes, side to move, castling rights)
+- **Backbone:** 6 residual blocks, 64 channels
+- **Policy head:** logits over a fixed 4,672-move encoding (from-square x to-square plus
+  underpromotions), with dropout regularization
+- ~3.9M parameters, PyTorch
+
+## Project structure
+
+```
+src/
+  data/process_pgn.py    PGN -> training tensors. Collects only the target player's moves
+                         and tags each example with a game id so training can split by game.
+  model/policy_net.py    KidokuPolicyNet (ResNet-style policy network).
+  train/train.py         Training: by-game split, validation move-match (top-1 / top-3),
+                         early stopping, best-validation checkpointing.
+  ui/                    Pygame interface to play against the bot.
+train.py                 Entry point (calls src.train.train).
+data/kidoku_all.pgn      Merged games of the target player (not committed).
+models/                  Saved checkpoints (not committed).
+```
+
+## Usage
+
+```bash
+# 1. Collect the target player's games into data/kidoku_all.pgn
+
+# 2. Process into training tensors (Black-only is the default)
+python -m src.data.process_pgn
+
+# 3. Train (writes models/kidoku_policy_best.pth, the best-validation checkpoint)
 python train.py
-Training checkpoints are saved in the models/ folder after every epoch.
-How to Use the Bot (Inference)
-Pythonfrom src.inference import KidokuBot
-import chess
 
-bot = KidokuBot(model_path="models/kidoku_policy_final.pth", temperature=1.6)
+# 4. Play against the bot (loads the best checkpoint; you play White)
+python -m src.ui.play_pygame
+```
 
-board = chess.Board()
-move = bot.get_move(board)
-print(move)   # Returns UCI move (e.g. "e2e4")
-Higher temperature = more random/human-like moves.
-Lower temperature = more deterministic.
-Limitations (Current)
+Use `models/kidoku_policy_best.pth` for play and inference, not the final-epoch checkpoint:
+the best-validation model generalizes better than the more memorized final one.
 
-Trained on limited data (~50 games)
-High training accuracy likely due to overfitting
-No search / value head (pure policy model)
-Best used as a style imitation experiment rather than a strong player
+## Tech stack
 
-Future Plans
-
-Train on significantly more games
-Add validation split to monitor overfitting
-Build playable Pygame interface
-Experiment with temperature tuning and move selection
-
-Acknowledgments
-Built using python-chess and PyTorch.
+Python, PyTorch, python-chess, Pygame.

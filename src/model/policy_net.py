@@ -5,8 +5,15 @@ A ResNet-style convolutional neural network for behavioral cloning of chess move
 
 Architecture:
     - Input:  14 x 8 x 8 board tensor
-    - Backbone: 6 Residual Blocks (deeper than before for better pattern recognition)
+    - Backbone: 6 Residual Blocks
     - Policy Head: Predicts logits over 4672 possible moves (fixed encoding)
+
+CHANGES vs the original:
+    - Stronger regularization in the policy head, where almost all the parameters
+      (and almost all the overfitting) live: a dropout on the flattened conv
+      features before the first linear layer, plus a higher dropout (0.5) before
+      the output layer. Dropout rate is exposed as a constructor arg so it's easy
+      to tune.
 """
 
 import torch
@@ -38,7 +45,7 @@ class KidokuPolicyNet(nn.Module):
 
     Output size = 4672 (matches our fixed move encoding in process_pgn.py)
     """
-    def __init__(self, num_moves: int = 4672):
+    def __init__(self, num_moves: int = 4672, dropout: float = 0.5):
         super().__init__()
 
         # Initial convolution
@@ -48,7 +55,7 @@ class KidokuPolicyNet(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # Residual tower (6 blocks = reasonable depth for this task)
+        # Residual tower (6 blocks)
         self.res_blocks = nn.Sequential(
             ResidualBlock(64),
             ResidualBlock(64),
@@ -58,16 +65,18 @@ class KidokuPolicyNet(nn.Module):
             ResidualBlock(64),
         )
 
-        # Policy head
+        # Policy head -- this is where most of the parameters and the overfitting are,
+        # so regularization is concentrated here.
         self.policy_head = nn.Sequential(
             nn.Conv2d(64, 32, kernel_size=1),   # Reduce channels
             nn.BatchNorm2d(32),
             nn.ReLU(inplace=True),
             nn.Flatten(),
+            nn.Dropout(dropout * 0.6),           # regularize the 2048-d conv features
             nn.Linear(32 * 8 * 8, 512),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.3),
-            nn.Linear(512, num_moves)
+            nn.Dropout(dropout),                 # regularize before the output layer
+            nn.Linear(512, num_moves),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
