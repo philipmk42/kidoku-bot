@@ -38,7 +38,7 @@ number instead of memorization. The split is seeded, so the result is reproducib
   so a train/val gap remains. Validation flattens with more epochs, which suggests the model
   is near the ceiling for this amount of data; more games is the most likely way to push it
   further.
-- **Imitation ceiling.** A ~530-rated player is inconsistent and will play different moves in
+- **Imitation ceiling.** A ~670-rated player is inconsistent and will play different moves in
   similar positions, so exact top-1 match has a natural ceiling well below 100%. Top-3 is
   arguably the fairer measure of how well the style is captured.
 - This is not a strong engine. By design it reproduces the target player's mistakes.
