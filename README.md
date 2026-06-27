@@ -1,7 +1,7 @@
 # Kidoku Bot
 
 A neural chess bot that learns to **play like a specific human** rather than to play well.
-It clones the move choices of `kidokuismyname`, a roughly 530-rated Chess.com player,
+It clones the move choices of `kidokuismyname`, a roughly 670-rated Chess.com player,
 using behavioral cloning on about 1,100 of their games.
 
 The goal is not strength. It is faithfulness: given a position, the bot tries to play the
