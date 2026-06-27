@@ -87,3 +87,6 @@ the best-validation model generalizes better than the more memorized final one.
 ## Tech stack
 
 Python, PyTorch, python-chess, Pygame.
+## Special Thanks
+
+Special thanks to **Vishak.P.Remesh** (kidokuismyname) for providing the game data used to train this bot.
